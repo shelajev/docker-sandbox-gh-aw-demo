@@ -1,5 +1,5 @@
 ---
-name: Docker Sandbox exploratory test
+name: "Docker Sandboxes sample: exploratory test"
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ tools:
 
 safe-outputs:
   create-pull-request:
-    title-prefix: "[sandbox demo] "
+    title-prefix: "[docker-sbx sample] "
     draft: true
     protected-files: blocked
     allowed-files:
