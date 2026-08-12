@@ -3,10 +3,10 @@
 This repository demonstrates an agent running exploratory integration tests inside a
 KVM-backed Docker Sandbox microVM. The agent gets a private Docker daemon, so a Maven
 container can use Testcontainers to start a real PostgreSQL dependency without exposing
-the self-hosted runner's Docker socket to agent-controlled code.
+the runner host's Docker socket to agent-controlled code.
 
 ```text
-GitHub-hosted Ubuntu runner (OCI self-hosted fallback)
+GitHub-hosted Ubuntu runner
 └── Docker Sandbox microVM
     ├── GitHub Agentic Workflows agent
     └── private Docker daemon
@@ -32,16 +32,17 @@ Docker is the only local prerequisite:
 The Maven image is pinned to `maven:3.9.9-eclipse-temurin-21` and its multi-platform
 digest; the test pins PostgreSQL to `postgres:16.6-alpine3.21` and its digest.
 
-## Runner choice
+## Runner requirements
 
-The demo defaults to a normal GitHub-hosted `ubuntu-24.04` runner. A live probe on
-2026-08-12 succeeded and showed `x86_64`, `kvm_amd`, `/dev/kvm`, passwordless sudo, and a
-writable KVM device. That means the full Docker Sandbox path is worth attempting without
-provisioning another machine.
+The demo defaults to a GitHub-hosted `ubuntu-24.04` runner. Docker Sandbox needs working
+KVM, access to `/dev/kvm`, passwordless sudo, Docker Engine, and an apt-based Linux
+distribution. When the runner is itself a virtual machine, nested virtualization must be
+available.
 
-GitHub still documents nested virtualization on hosted runners as technically possible but
-officially unsupported. Keep a dedicated Ubuntu 24.04 self-hosted runner as the fallback if
-the hosted image changes or proves unstable during recording. Verify any candidate with:
+GitHub documents nested virtualization on hosted runners as technically possible but
+officially unsupported, so availability may change with the runner image. The manual
+`Hosted runner KVM probe` workflow checks the relevant capabilities before running the
+full demonstration:
 
 ```bash
 uname -m
@@ -53,45 +54,10 @@ sudo apt-get update && sudo apt-get install -y cpu-checker
 sudo kvm-ok
 ```
 
-The runner must have x86-64 or supported ARM64 Docker Sandboxes packages, working KVM,
-nested virtualization when itself virtualized, passwordless sudo, Docker Engine, and an
-apt-based Linux distribution. For the most predictable OCI setup, use an Ubuntu 24.04
-x86-64 Intel shape known to expose nested virtualization, with about 4 OCPUs, 16 GB RAM,
-and a 100 GB boot volume. Bare metal is the fallback when no suitable VM shape exposes KVM.
-
-### Existing OCI host assessment (2026-08-12)
-
-The existing `opc@92.5.62.125` host cannot run this demo without replacing the compute
-instance. A live read-only check found:
-
-| Check | Result |
-| --- | --- |
-| Architecture | `aarch64` |
-| Distribution | Oracle Linux 10.1 (`ID_LIKE=fedora`) |
-| CPU virtualization flags | none |
-| KVM modules | none |
-| `/dev/kvm` | absent |
-| Passwordless sudo | available |
-| Docker | client/server 29.6.1 |
-| Capacity | 4 CPUs, 22 GB RAM, 46 GB free on a 75 GB root filesystem |
-
-The missing `/dev/kvm` is decisive: packages and workflow changes cannot expose a CPU
-virtualization feature withheld by the cloud hypervisor. Current Docker Sandbox v0.35.x
-also temporarily has no Linux ARM64 release. Preserve this host for its existing Hermes
-workload and provision a separate Ubuntu runner rather than converting it in place.
-
-The manual `Hosted runner KVM probe` workflow can be rerun at any time to detect changes to
-the hosted image before a live demo.
-
-Install Docker Engine from Docker's Ubuntu repository, add the runner user to the `docker`
-group, and verify `docker version`, `docker info`, `docker compose version`, and
-`docker run --rm hello-world`. Do not preinstall `docker-sbx`; the compiled workflow owns
-that installation and preflight.
-
-For the fallback, register the runner at repository scope with the custom label `docker-sbx`,
-install it as a service, and change `runs-on` in `sandbox-explorer.md` back to
-`[self-hosted, linux, x64, docker-sbx]` before recompiling. Keep the repository private while
-using a persistent self-hosted runner.
+If the hosted runner does not expose KVM, use an Ubuntu 24.04 self-hosted runner that meets
+the same requirements, update `runs-on` in `sandbox-explorer.md`, and recompile the
+workflow. Do not preinstall `docker-sbx`; the compiled workflow owns its installation and
+preflight.
 
 ## Repository configuration
 
