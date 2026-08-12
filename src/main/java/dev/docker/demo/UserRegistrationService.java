@@ -29,7 +29,7 @@ public final class UserRegistrationService {
         try (Connection connection = dataSource.getConnection();
              var statement = connection.prepareStatement(
                      "INSERT INTO users (email) VALUES (?)")) {
-            statement.setString(1, email);
+            statement.setString(1, email.toLowerCase());
             statement.executeUpdate();
             return true;
         } catch (SQLException exception) {

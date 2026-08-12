@@ -44,4 +44,10 @@ class UserRegistrationServiceTest {
         assertTrue(registrations.register("alice@example.com"));
         assertFalse(registrations.register("alice@example.com"));
     }
+
+    @Test
+    void rejectsCaseVariantEmailAddress() throws SQLException {
+        assertTrue(registrations.register("bob@example.com"));
+        assertFalse(registrations.register("BOB@example.com"));
+    }
 }
