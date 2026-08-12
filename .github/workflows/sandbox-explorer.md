@@ -4,7 +4,7 @@ name: Docker Sandbox exploratory test
 on:
   workflow_dispatch:
 
-runs-on: [self-hosted, linux, x64, docker-sbx]
+runs-on: ubuntu-24.04
 
 permissions:
   contents: read
@@ -67,4 +67,3 @@ Then:
 Do not modify dependency manifests, workflow files, scripts, documentation,
 or generated files. Do not weaken or delete existing tests. Include the
 commands run and their results in the pull request description.
-

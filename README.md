@@ -6,7 +6,7 @@ container can use Testcontainers to start a real PostgreSQL dependency without e
 the self-hosted runner's Docker socket to agent-controlled code.
 
 ```text
-OCI self-hosted runner
+GitHub-hosted Ubuntu runner (OCI self-hosted fallback)
 └── Docker Sandbox microVM
     ├── GitHub Agentic Workflows agent
     └── private Docker daemon
@@ -32,9 +32,16 @@ Docker is the only local prerequisite:
 The Maven image is pinned to `maven:3.9.9-eclipse-temurin-21` and its multi-platform
 digest; the test pins PostgreSQL to `postgres:16.6-alpine3.21` and its digest.
 
-## Runner prerequisites
+## Runner choice
 
-Use a dedicated Ubuntu 24.04 self-hosted runner. Before registering it, verify:
+The demo defaults to a normal GitHub-hosted `ubuntu-24.04` runner. A live probe on
+2026-08-12 succeeded and showed `x86_64`, `kvm_amd`, `/dev/kvm`, passwordless sudo, and a
+writable KVM device. That means the full Docker Sandbox path is worth attempting without
+provisioning another machine.
+
+GitHub still documents nested virtualization on hosted runners as technically possible but
+officially unsupported. Keep a dedicated Ubuntu 24.04 self-hosted runner as the fallback if
+the hosted image changes or proves unstable during recording. Verify any candidate with:
 
 ```bash
 uname -m
@@ -73,22 +80,18 @@ virtualization feature withheld by the cloud hypervisor. Current Docker Sandbox 
 also temporarily has no Linux ARM64 release. Preserve this host for its existing Hermes
 workload and provision a separate Ubuntu runner rather than converting it in place.
 
-### Try a GitHub-hosted runner first
-
-The manual `Hosted runner KVM probe` workflow checks a standard `ubuntu-24.04` runner for
-a writable `/dev/kvm`. Run it before provisioning OCI. If it passes, temporarily change
-`runs-on` in `sandbox-explorer.md` to `ubuntu-24.04`, recompile, and attempt the full demo.
-GitHub documents nested virtualization on hosted runners as technically possible but
-officially unsupported, so a passing probe is useful for experimentation but is not a
-stability guarantee for a recorded or published demo.
+The manual `Hosted runner KVM probe` workflow can be rerun at any time to detect changes to
+the hosted image before a live demo.
 
 Install Docker Engine from Docker's Ubuntu repository, add the runner user to the `docker`
 group, and verify `docker version`, `docker info`, `docker compose version`, and
 `docker run --rm hello-world`. Do not preinstall `docker-sbx`; the compiled workflow owns
 that installation and preflight.
 
-Register the runner at repository scope with the custom label `docker-sbx`, then install it
-as a service. Keep the repository private while using a persistent self-hosted runner.
+For the fallback, register the runner at repository scope with the custom label `docker-sbx`,
+install it as a service, and change `runs-on` in `sandbox-explorer.md` back to
+`[self-hosted, linux, x64, docker-sbx]` before recompiling. Keep the repository private while
+using a persistent self-hosted runner.
 
 ## Repository configuration
 
